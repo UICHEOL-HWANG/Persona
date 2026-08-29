@@ -10,6 +10,11 @@ const BASE = process.env.BASE ?? 'http://localhost:3000';
 const count = Number(process.argv[2]) || 8;
 const smoke = process.argv.includes('--smoke');
 
+// --demo: 심사·제출용. 참가자를 채우고 1라운드까지 열어 둔 채로 남긴다.
+// 코드를 받은 사람이 혼자 들어와도 대기하지 않고 바로 팀에 합류한다(§3).
+const demo = process.argv.includes('--demo');
+const wantedCode = (process.argv.find((a) => a.startsWith('--code=')) ?? '').split('=')[1];
+
 const NAMES = ['지훈', '서연', '민준', '하윤', '도윤', '지우', '예준', '수아', '시우', '지아', '주원', '하은'];
 const MBTI = ['ENFP', 'INTJ', 'ISFJ', 'ESTP', 'INFP', 'ENTJ', 'ISTP', 'ESFJ'];
 const POOL = {
@@ -40,12 +45,13 @@ const pick = (arr, i) => arr[i % arr.length];
 const event = await api('/api/events', {
   method: 'POST',
   body: JSON.stringify({
-    title: '2026 I/O Extended 애프터파티',
+    title: demo ? '페르소나 체험 파티' : '2026 I/O Extended 애프터파티',
     purpose: '신입생 환영회 · 30명 · 서로 이름도 모름',
     host_name: '데모 호스트',
     team_size: 4,
-    rotation_minutes: 1,
-    total_rounds: 3,
+    rotation_minutes: demo ? 20 : 1,
+    total_rounds: demo ? 4 : 3,
+    ...(wantedCode ? { code: wantedCode } : {}),
   }),
 });
 console.log(`행사 생성  code=${event.code}`);
@@ -68,6 +74,18 @@ console.log(`참가자 ${people.length}명 투입`);
 console.log(`\n호스트 콘솔  ${BASE}/host/${event.code}`);
 console.log(`참가 화면    ${BASE}/join/${event.code}`);
 people.slice(0, 3).forEach((p) => console.log(`  · ${p.nickname} → ${BASE}/p/${event.code}  (pid ${p.id})`));
+
+if (demo) {
+  await api(`/api/events/${event.code}/next`, { method: 'POST' });
+  const state = await api(`/api/events/${event.code}`);
+  console.log('\n── 제출용 체험 행사 준비 완료 ──────────────────────');
+  console.log(`  참가 코드   ${event.code}`);
+  console.log(`  참가 링크   ${BASE}/join/${event.code}`);
+  console.log(`  호스트 콘솔 ${BASE}/host/${event.code}`);
+  console.log(`  현재        ${state.event.current_round}라운드 진행 중 · ${state.teams.length}팀 · 참가자 ${state.participants.length}명`);
+  console.log('\n  코드를 받은 사람이 혼자 들어와도 대기 없이 바로 팀에 합류합니다.');
+  process.exit(0);
+}
 
 if (!smoke) process.exit(0);
 

@@ -11,9 +11,18 @@ export async function POST(req: Request) {
 
     const store = await getStore();
 
-    // 코드 충돌 회피 (사실상 안 나지만 현장에서 겹치면 치명적이라 확인한다)
-    let code = newCode();
-    for (let i = 0; i < 5 && (await store.getEventByCode(code)); i++) code = newCode();
+    // 코드를 직접 정할 수 있게 둔다 — 행사명을 코드로 쓰거나, 제출용으로 고정할 때.
+    const wanted = (b as { code?: string }).code?.trim().toUpperCase();
+    let code: string;
+    if (wanted) {
+      if (!/^[A-Z0-9]{4,10}$/.test(wanted)) return fail('코드는 영문 대문자와 숫자 4~10자여야 합니다.');
+      if (await store.getEventByCode(wanted)) return fail('이미 쓰이고 있는 코드입니다.', 409);
+      code = wanted;
+    } else {
+      // 충돌 회피 (사실상 안 나지만 현장에서 겹치면 치명적이라 확인한다)
+      code = newCode();
+      for (let i = 0; i < 5 && (await store.getEventByCode(code)); i++) code = newCode();
+    }
 
     const event: EventRow = {
       id: newId(),

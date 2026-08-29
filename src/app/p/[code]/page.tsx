@@ -14,6 +14,7 @@ import type { EventRow, Participant, Task, Team } from '@/lib/types';
 interface MeState {
   event: EventRow;
   me: Participant;
+  joinedMidRound: boolean;
   team: Team | null;
   teammates: { id: string; nickname: string }[];
   tasks: (Task & { target_name?: string })[];
@@ -51,7 +52,7 @@ export default function RoundPage() {
   }
   if (!data) return null;
 
-  const { event, me, team, teammates, tasks, ranking, totalParticipants } = data;
+  const { event, me, team, teammates, tasks, ranking, totalParticipants, joinedMidRound } = data;
 
   // ── 대기 화면 ───────────────────────────────────────────
   if (event.current_round === 0 || !team) {
@@ -122,6 +123,23 @@ export default function RoundPage() {
             </p>
           </div>
         </section>
+
+        {/* §3 라운드 도중에 합류한 사람에게는 "어떻게 시작할지"를 한 줄 준다.
+            이게 없으면 이미 대화 중인 자리에 끼어드는 게 제일 어렵다. */}
+        {joinedMidRound && (
+          <section className="card mb-4 border-mint/40 p-5">
+            <p className="kicker mb-2 text-mint">진행 중인 라운드에 합류했습니다</p>
+            <p className="text-[14px] font-bold">
+              {teammates.length > 0
+                ? `"${teammates[0].nickname}님, 저 방금 왔어요. 지금 무슨 얘기 중이었어요?"`
+                : '"저 방금 왔어요. 같이 해도 될까요?"'}
+            </p>
+            <p className="mt-2 text-[12px] leading-relaxed text-muted">
+              이 한 마디로 시작하면 됩니다. 아래 미션·퀴즈는 지금부터 같이 하시면 되고,
+              점수는 팀이 함께 딴 것으로 계산됩니다.
+            </p>
+          </section>
+        )}
 
         {/* §5 매칭 근거 — "왜 이 조합인가"를 그대로 보여준다 */}
         {(team.shared.length > 0 || team.different.length > 0) && (

@@ -29,9 +29,15 @@ export async function GET(req: Request, ctx: { params: Promise<{ code: string }>
       .sort((a, b) => b.score - a.score || a.created_at.localeCompare(b.created_at))
       .map((p, i) => ({ rank: i + 1, id: p.id, nickname: p.nickname, score: p.score }));
 
+    // §3 라운드 도중에 들어온 사람인지 — 화면에서 "어떻게 시작할지"를 따로 안내한다.
+    const joinedMidRound = Boolean(
+      event.round_started_at && me.created_at > event.round_started_at,
+    );
+
     return ok({
       event,
       me,
+      joinedMidRound,
       team: myTeam,
       teammates: myTeam ? myTeam.member_ids.filter((id) => id !== pid).map((id) => ({ id, nickname: nameOf(id) })) : [],
       tasks: tasks.map((t) => ({
