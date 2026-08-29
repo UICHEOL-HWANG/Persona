@@ -12,6 +12,26 @@ export const MISSION_POINTS = 2;
 export const QUIZ_POINTS = 1;
 
 /**
+ * Task 를 만드는 유일한 통로.
+ *
+ * 모든 행이 같은 키 집합을 갖게 하려고 둔 것이다. PostgREST 는 배열 삽입에서
+ * 행마다 키가 다르면 없는 키를 DEFAULT 가 아니라 NULL 로 채우기 때문에,
+ * 미션 행과 퀴즈 행의 모양이 다르면 NOT NULL 컬럼이 터진다.
+ */
+function makeTask(fields: Omit<Task, 'target_id' | 'options' | 'answer' | 'guesses' | 'photo' | 'completed_at'> &
+  Partial<Pick<Task, 'target_id' | 'options' | 'answer' | 'guesses' | 'photo' | 'completed_at'>>): Task {
+  return {
+    target_id: null,
+    options: null,
+    answer: null,
+    guesses: {},
+    photo: null,
+    completed_at: null,
+    ...fields,
+  };
+}
+
+/**
  * 퀴즈 만들기 — LLM을 쓰지 않는다. 참가자가 낸 프로필이 그대로 재료다(§8).
  *
  * "상대가 이 질문에 뭐라고 답했을까"를 맞히는 구조라, 맞히면 "통하네"가 되고
@@ -68,22 +88,23 @@ function buildQuizzes(
     if (!picked) continue;
 
     usedQ.add(picked.qid);
-    out.push({
-      id: newId(),
-      event_id: team.event_id,
-      team_id: team.id,
-      round_no: team.round_no,
-      kind: 'quiz',
-      title: `${target.nickname}은(는) 뭐라고 답했을까?`,
-      body: QUESTIONS_BY_ID[picked.qid].label,
-      source: 'profile',
-      target_id: target.id,
-      options: picked.options,
-      answer: picked.answer,
-      guesses: {},
-      done: false,
-      points: 0,
-    });
+    out.push(
+      makeTask({
+        id: newId(),
+        event_id: team.event_id,
+        team_id: team.id,
+        round_no: team.round_no,
+        kind: 'quiz',
+        title: `${target.nickname}은(는) 뭐라고 답했을까?`,
+        body: QUESTIONS_BY_ID[picked.qid].label,
+        source: 'profile',
+        target_id: target.id,
+        options: picked.options,
+        answer: picked.answer,
+        done: false,
+        points: 0,
+      }),
+    );
   }
   return out;
 }
@@ -137,18 +158,20 @@ export async function startNextRound(store: Store, event: EventRow): Promise<Eve
         teamSize: members.length,
       });
       const m = ai ?? pickTemplate({ names, shared: team.shared, different: team.different }, seed);
-      tasks.push({
-        id: newId(),
-        event_id: event.id,
-        team_id: team.id,
-        round_no: roundNo,
-        kind: 'mission',
-        title: m.title,
-        body: m.body,
-        source: ai ? 'ai' : 'template',
-        done: false,
-        points: 0,
-      });
+      tasks.push(
+        makeTask({
+          id: newId(),
+          event_id: event.id,
+          team_id: team.id,
+          round_no: roundNo,
+          kind: 'mission',
+          title: m.title,
+          body: m.body,
+          source: ai ? 'ai' : 'template',
+          done: false,
+          points: 0,
+        }),
+      );
     }
 
     tasks.push(...buildQuizzes(team, members, participants, quizCount, seed));
@@ -156,18 +179,20 @@ export async function startNextRound(store: Store, event: EventRow): Promise<Eve
     // 1:1이면 미션도 하나 붙여 준다 — 앉아서 할 수 있는 것으로.
     if (!wantMission) {
       const m = pickTemplate({ names, shared: team.shared, different: team.different }, seed);
-      tasks.push({
-        id: newId(),
-        event_id: event.id,
-        team_id: team.id,
-        round_no: roundNo,
-        kind: 'mission',
-        title: m.title,
-        body: m.body,
-        source: 'template',
-        done: false,
-        points: 0,
-      });
+      tasks.push(
+        makeTask({
+          id: newId(),
+          event_id: event.id,
+          team_id: team.id,
+          round_no: roundNo,
+          kind: 'mission',
+          title: m.title,
+          body: m.body,
+          source: 'template',
+          done: false,
+          points: 0,
+        }),
+      );
     }
 
     for (let i = 0; i < team.member_ids.length; i++) {

@@ -27,7 +27,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
     const patch = {
       done: true,
-      photo: photo?.slice(0, 3_000_000),
+      photo: photo ? photo.slice(0, 3_000_000) : null,
       completed_at: nowIso(),
       points: MISSION_POINTS,
     };

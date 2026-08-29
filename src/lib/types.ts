@@ -54,14 +54,19 @@ export interface Task {
   source: 'ai' | 'template' | 'profile'; // 생성 출처 (데모에서 그대로 노출)
 
   // 퀴즈 전용 — "상대가 이 질문에 뭐라고 답했을까"
-  target_id?: string;
-  options?: string[];
-  answer?: string;
-  guesses?: Record<string, string>;      // participantId -> 고른 답
+  //
+  // 아래 선택 필드들이 undefined 가 아니라 null 인 이유:
+  // PostgREST 는 여러 행을 한 번에 넣을 때 모든 행의 키 집합을 합집합으로 잡고,
+  // 어떤 행에 없는 키는 DEFAULT 가 아니라 NULL 로 채운다. 그래서 미션 행과 퀴즈 행이
+  // 키 집합이 다르면 NOT NULL 컬럼이 터진다. 항상 같은 키를 실어 보낸다.
+  target_id: string | null;
+  options: string[] | null;
+  answer: string | null;
+  guesses: Record<string, string>;       // participantId -> 고른 답
 
   done: boolean;
-  photo?: string;                        // 축소된 data URL
-  completed_at?: string;
+  photo: string | null;                  // 축소된 data URL
+  completed_at: string | null;
   points: number;                        // 이 태스크로 팀이 딴 점수
 }
 
