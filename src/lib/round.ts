@@ -32,6 +32,22 @@ function makeTask(fields: Omit<Task, 'target_id' | 'options' | 'answer' | 'guess
 }
 
 /**
+ * AI가 참조해도 되는 사실 전부.
+ * 참가자가 낸 프로필에서만 만든다 — 이 목록 밖은 미션에 등장할 수 없다(mission/gemini.ts 검증).
+ */
+function factsFor(members: Participant[]): string[] {
+  const facts: string[] = [];
+  for (const m of members) {
+    if (m.mbti) facts.push(`${m.nickname} · MBTI · ${m.mbti}`);
+    for (const q of QUESTIONS) {
+      const v = (m.answers[q.id] ?? '').trim();
+      if (v) facts.push(`${m.nickname} · ${q.short} · ${v}`);
+    }
+  }
+  return facts;
+}
+
+/**
  * 퀴즈 만들기 — LLM을 쓰지 않는다. 참가자가 낸 프로필이 그대로 재료다(§8).
  *
  * "상대가 이 질문에 뭐라고 답했을까"를 맞히는 구조라, 맞히면 "통하네"가 되고
@@ -156,6 +172,10 @@ export async function startNextRound(store: Store, event: EventRow): Promise<Eve
         different: team.different,
         roundNo,
         teamSize: members.length,
+        facts: factsFor(members),
+        otherNames: participants
+          .filter((p) => !team.member_ids.includes(p.id))
+          .map((p) => p.nickname),
       });
       const m = ai ?? pickTemplate({ names, shared: team.shared, different: team.different }, seed);
       tasks.push(

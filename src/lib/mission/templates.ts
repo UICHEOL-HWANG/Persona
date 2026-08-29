@@ -54,12 +54,12 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   },
   {
     title: '한 명 소개하기',
-    body: '{A}에 대해 나머지 팀원이 알아낸 것만으로 소개 문장 세 줄을 완성하세요. {A}는 맞는지 채점만 합니다. 완성된 소개문을 사진으로.',
+    body: '{A}에 대해 나머지 팀원이 알아낸 것만으로 소개 문장 세 줄을 완성하세요. {A는} 맞는지 채점만 합니다. 완성된 소개문을 사진으로.',
     min: 3,
   },
   {
     title: '교차 인터뷰',
-    body: '{A}와 {B}가 서로를 1분씩 인터뷰하고, 나머지가 더 재미있게 답한 쪽을 고릅니다. 인터뷰 장면을 사진으로.',
+    body: '{A와} {B가} 서로를 1분씩 인터뷰하고, 나머지가 더 재미있게 답한 쪽을 고릅니다. 인터뷰 장면을 사진으로.',
     min: 3,
   },
   {
@@ -69,15 +69,38 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   },
 ];
 
+/** 앞 글자에 받침이 있는지 — 조사를 고르는 데 쓴다 */
+function hasFinalConsonant(word: string): boolean {
+  const ch = word.trim().at(-1);
+  if (!ch) return false;
+  const code = ch.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return true; // 한글이 아니면 받침이 있는 쪽으로 취급
+  return (code - 0xac00) % 28 !== 0;
+}
+
+/** "서연와 지훈가" 같은 게 나오지 않도록 이름에 맞는 조사를 붙인다 */
+function withParticle(name: string, withBatchim: string, without: string): string {
+  return name + (hasFinalConsonant(name) ? withBatchim : without);
+}
+
 export function fillTemplate(
   t: MissionTemplate,
   ctx: { names: string[]; shared: string[]; different: string[] },
 ): { title: string; body: string } {
-  const [a, b] = ctx.names;
+  const a = ctx.names[0] ?? '팀원';
+  const b = ctx.names[1] ?? '팀원';
   const sub = (s: string) =>
     s
-      .replaceAll('{A}', a ?? '팀원')
-      .replaceAll('{B}', b ?? '팀원')
+      // 조사가 붙는 자리 — {A와} {A가} {A는} {A를} 처럼 쓴다
+      .replaceAll('{A와}', withParticle(a, '과', '와'))
+      .replaceAll('{B와}', withParticle(b, '과', '와'))
+      .replaceAll('{A가}', withParticle(a, '이', '가'))
+      .replaceAll('{B가}', withParticle(b, '이', '가'))
+      .replaceAll('{A는}', withParticle(a, '은', '는'))
+      .replaceAll('{B는}', withParticle(b, '은', '는'))
+      .replaceAll('{A에}', withParticle(a, '이', '가'))
+      .replaceAll('{A}', a)
+      .replaceAll('{B}', b)
       .replaceAll('{ALL}', ctx.names.join(' · '))
       .replaceAll('{N}', String(ctx.names.length))
       .replaceAll('{SHARED}', ctx.shared[0] ?? '')
