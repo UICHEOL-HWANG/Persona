@@ -1,0 +1,120 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+@import "tailwindcss";
+@theme {
+  --color-ink: #08080e;
+  --color-surface: #12121d;
+  --color-surface2: #1b1b2b;
+  --color-line: #2b2b42;
+  --color-fg: #ececf6;
+  --color-muted: #8b8ba8;
+  --color-violet: #7b61ff;
+  --color-pink: #ff5c8a;
+  --color-mint: #4ade80;
+  --color-amber: #fbbf24;
+
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* 가로 스크롤만 막는다.
+   overflow-x: hidden 을 html/body에 걸면 overflow-y가 auto로 승격되어
+   스크롤 컨테이너가 뒤틀린다(모바일에서 특히). clip 은 그런 부작용이 없다. */
+html {
+  overflow-x: clip;
+}
+
+/* 모바일 터치 기본값 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  touch-action: manipulation;
+}
+
+/* 노치·홈 인디케이터 회피 */
+.safe-top { padding-top: max(1.25rem, env(safe-area-inset-top)); }
+.safe-bottom { padding-bottom: max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem)); }
+
+/* 파티 배경 — 은은한 두 개의 광원 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60rem 40rem at 15% -10%, rgba(123, 97, 255, 0.22), transparent 60%),
+    radial-gradient(50rem 36rem at 95% 105%, rgba(255, 92, 138, 0.18), transparent 60%);
+  pointer-events: none;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface/80 backdrop-blur-sm;
+  }
+  /* Tailwind v4에서는 @apply로 커스텀 클래스를 다시 참조할 수 없어 각 버튼이 전체 목록을 갖는다 */
+  .btn,
+  .btn-primary,
+  .btn-ghost {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-5 py-3
+           text-[15px] font-semibold transition active:scale-[0.98]
+           disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply text-white;
+    background-image: linear-gradient(135deg, var(--color-violet), var(--color-pink));
+  }
+  .btn-ghost {
+    @apply border border-line bg-surface2 text-fg hover:border-violet/60;
+  }
+  .label {
+    @apply mb-2 block text-[13px] font-semibold text-muted;
+  }
+  /* iOS는 16px 미만 입력창에 포커스가 가면 화면을 확대해 버린다. 16px 아래로 내리지 말 것. */
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface2 px-4 py-3 text-[16px]
+           text-fg outline-none transition placeholder:text-muted/60
+           focus:border-violet focus:ring-2 focus:ring-violet/25;
+  }
+  /* 손가락으로 누르는 것이라 최소 높이를 확보한다 */
+  .chip,
+  .chip-on {
+    @apply min-h-[38px] rounded-full border border-line bg-surface2 px-3.5 py-2
+           text-[13px] text-muted transition;
+  }
+  .chip-on {
+    @apply border-violet bg-violet/15 text-fg;
+  }
+  .kicker {
+    @apply text-[12px] font-bold uppercase tracking-[0.18em] text-violet;
+  }
+}
+
+/* 라운드 전환 시 카드가 갈아끼워지는 느낌 */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* 모션을 줄이도록 설정한 기기에서는 애니메이션을 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
