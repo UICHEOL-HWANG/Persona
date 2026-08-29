@@ -2,11 +2,11 @@
 // .env.local 의 Supabase 설정이 실제로 동작하는지 확인한다.
 //   node --env-file=.env.local scripts/check-supabase.mjs
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!url || !key) {
-  console.error('NEXT_PUBLIC_SUPABASE_URL 과 SUPABASE_SERVICE_ROLE_KEY 가 .env.local 에 있어야 합니다.');
+  console.error('SUPABASE_URL 과 SUPABASE_SERVICE_ROLE_KEY 가 .env.local 에 있어야 합니다.');
   process.exit(1);
 }
 if (key.startsWith('sb_publishable_')) {

@@ -33,6 +33,15 @@ let cached: Store | null = null;
 let warned = false;
 
 /**
+ * Supabase URL. 서버(라우트 핸들러)에서만 읽으므로 브라우저에 노출할 이유가 없다.
+ * NEXT_PUBLIC_ 접두사가 붙으면 값이 클라이언트 번들로 나갈 수 있어 SUPABASE_URL 을 쓴다.
+ * 예전 이름도 계속 읽어서 이미 돌아가는 환경이 깨지지 않게 한다.
+ */
+function supabaseUrl(): string | undefined {
+  return process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+}
+
+/**
  * 서버에서만 쓰는 비밀 키를 고른다.
  * 스키마가 RLS를 켜고 정책을 두지 않으므로 공개(publishable/anon) 키로는 모든 쿼리가 막힌다.
  * 잘못된 키가 들어오면 조용히 빈 결과가 도는 대신 여기서 크게 알린다.
@@ -59,7 +68,7 @@ function serverKey(): string | undefined {
  */
 export async function getStore(): Promise<Store> {
   if (cached) return cached;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = supabaseUrl();
   const key = serverKey();
   if (url && key) {
     const { createSupabaseStore } = await import('./supabase');
@@ -72,7 +81,6 @@ export async function getStore(): Promise<Store> {
 }
 
 export function storeKind(): 'memory' | 'supabase' {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  return url && key ? 'supabase' : 'memory';
+  return supabaseUrl() && key ? 'supabase' : 'memory';
 }

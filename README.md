@@ -74,12 +74,13 @@ node scripts/seed.mjs 8 --smoke
 4. `.env.local` (로컬) 과 Vercel 환경변수에 넣는다:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
-> `service_role` 키는 RLS를 우회한다. 서버(라우트 핸들러)에서만 쓰이고 브라우저로 나가지
-> 않으므로 `NEXT_PUBLIC_` 접두사를 붙이지 말 것.
+> 둘 다 서버(라우트 핸들러)에서만 읽는다. `NEXT_PUBLIC_` 접두사를 붙이지 말 것 —
+> 붙이면 값이 클라이언트 번들로 나간다. 특히 `service_role` 키는 RLS를 우회하므로
+> 노출되면 DB 전체가 열린다.
 
 ### 2. Gemini — 선택
 
